@@ -5,14 +5,14 @@ const port = 3000
 import routesPersonagens from "./routes/personagens"
 import routesDepositos from "./routes/depositos"
 import routesHabilidades from "./routes/habilidades"
-import routesVendas from "./routes/vendas"
+import routesCompras from "./routes/compras"
 
 app.use(express.json())
 
 app.use("/personagens", routesPersonagens)
 app.use("/depositos", routesDepositos)
 app.use("/habilidades", routesHabilidades)
-app.use("/vendas", routesVendas)
+app.use("/compras", routesCompras)
 
 app.get('/', (req, res) => {
   res.send('API: Sistema de Controle de habilidades de RPG')
