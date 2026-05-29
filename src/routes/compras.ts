@@ -112,7 +112,7 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    const [comprar_habilidade, personagem] = await prisma.$transaction([
+    const [comprar_habilidade, personagem, personagem_habilidade] = await prisma.$transaction([
       prisma.comprar_habilidade.create({
         data: { Personagem_Id, Habilidade_Id, Pontos_gastos: Number(dadoHabilidade.Pontos_necessarios), Analise_nivel: Number(dadoHabilidade.Nivel_necessario) },
         include: {
@@ -123,8 +123,11 @@ router.post("/", async (req, res) => {
         where: { Id_personagem: Personagem_Id },
         data: { Pontos: { decrement: Number(dadoHabilidade.Pontos_necessarios) } }
       }),
+      prisma.personagem_habilidade.create({ 
+        data: { Personagem_Id, Habilidade_Id } 
+      })
     ])
-    res.status(201).json({ comprar_habilidade, personagem })
+    res.status(201).json({ comprar_habilidade, personagem, personagem_habilidade })
   } catch (error) {
     res.status(400).json({ error })
   }
@@ -167,7 +170,7 @@ router.delete("/:Personagem_Id/:Habilidade_Id", async (req, res) => {
       return
     }
 
-    const [deleteCompra, personagem] = await prisma.$transaction([
+    const [deleteCompra, personagem, deletePersonagemHabilidade] = await prisma.$transaction([
       prisma.comprar_habilidade.delete({
         where: {
           Personagem_Id_Habilidade_Id: {
@@ -186,19 +189,25 @@ router.delete("/:Personagem_Id/:Habilidade_Id", async (req, res) => {
             increment: compra.Pontos_gastos
           }
         }
+      }),
+
+      prisma.personagem_habilidade.deleteMany({ 
+        where: { 
+          Personagem_Id,
+          Habilidade_Id
+        } 
       })
     ])
 
     res.status(200).json({
       deleteCompra,
       personagem,
+      deletePersonagemHabilidade
     })
 
     } catch (error) {
 
-    res.status(500).json({
-      erro: "Erro interno do servidor"
-    })
+    res.status(500).json({erro: "Erro interno do servidor"})
   }
 })
 

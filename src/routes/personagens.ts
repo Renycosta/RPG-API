@@ -22,7 +22,7 @@ const personagemSchema = z.object({
 router.get("/", async (req, res) => {
     try {
         const personagens = await prisma.personagem.findMany({
-            // include: { Personagem_habilidade: true }
+          include: { PH: true }
         })
         res.status(200).json(personagens)
     } catch (error) {
