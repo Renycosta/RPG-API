@@ -4,14 +4,14 @@ const port = 3000
 
 import routesPersonagens from "./routes/personagens"
 import routesDepositos from "./routes/depositos"
-import routesProdutos from "./routes/produtos"
+import routesHabilidades from "./routes/habilidades"
 import routesVendas from "./routes/vendas"
 
 app.use(express.json())
 
 app.use("/personagens", routesPersonagens)
 app.use("/depositos", routesDepositos)
-app.use("/produtos", routesProdutos)
+app.use("/habilidades", routesHabilidades)
 app.use("/vendas", routesVendas)
 
 app.get('/', (req, res) => {
