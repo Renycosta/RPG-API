@@ -2,7 +2,7 @@ import { prisma } from "../../lib/prisma";
 import { Classes } from "../../generated/prisma/enums";
 import { Router } from "express"
 import { z } from "zod"
-// import nodemailer from "nodemailer"
+import nodemailer from "nodemailer"
 
 const router = Router()
 
@@ -109,5 +109,126 @@ router.delete("/:Id_personagem", async (req, res) => {
         res.status(500).json({ erro: error })
     }
 })
+
+function gerarTabelaHTML(dados: any) { 
+  let html = ` 
+    <html> 
+    <body style="font-family: Helvetica, Arial, sans-serif;"> 
+      <h1>Ficha do Personagem</h1> 
+      <h2>${dados.Nome_personagem}</h2> 
+      <h3>Classe: ${dados.Classe}</h3> 
+      <h3>Nível: ${dados.Nivel}</h3> 
+      <h3>Pontos disponíveis: ${dados.Pontos}</h3> 
+      
+      <hr> 
+      
+      <h2>Habilidades Compradas</h2> 
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;"> 
+        <thead style="background-color: rgb(195, 191, 191);"> 
+          <tr> 
+            <th>Data</th> 
+            <th>Habilidade</th> 
+            <th>Tipo</th> 
+            <th>Pontos Gastos</th> 
+            <th>Nível Necessário</th> 
+          </tr> 
+        </thead> 
+      <tbody> 
+    ` 
+    let totalPontos = 0 
+    for (const compra of dados.CH) { 
+      totalPontos += compra.Pontos_gastos 
+      
+      const data = new Date(compra.Data) 
+      
+      const dataFormatada = data.toLocaleString("pt-BR", { 
+        timeZone: "America/Sao_Paulo", 
+        day: "2-digit", 
+        month: "2-digit", 
+        year: "numeric", 
+        hour: "2-digit", 
+        minute: "2-digit" 
+      }) 
+      
+      html += ` 
+        <tr> 
+          <td>${dataFormatada}</td> 
+          <td>${compra.Habilidade.Nome_habilidade}</td> 
+          <td>${compra.Habilidade.Tipo}</td> 
+          <td style="text-align: right;"> ${compra.Pontos_gastos} </td> 
+          <td style="text-align: center;"> ${compra.Habilidade.Nivel_necessario} </td> 
+        </tr> 
+      ` 
+    } 
+    
+    html += ` 
+      <tr style="font-weight: bold; background-color:rgb(235, 232, 232);"> 
+        <td colspan="3" style="text-align: right;"> Total de Pontos Gastos: </td> 
+        <td style="text-align: right;"> ${totalPontos} </td> 
+        <td></td> 
+      </tr> 
+    ` 
+    
+    html += ` 
+      </tbody> 
+        </table> 
+        <h3> Pontos restantes: ${dados.Pontos} </h3> 
+      </body> 
+      </html> 
+    ` 
+    return html 
+    } 
+    
+    const transporter = nodemailer.createTransport({ 
+      host: "sandbox.smtp.mailtrap.io", 
+      port: 2525, 
+      secure: false, 
+      auth: { 
+        user: process.env.MAILTRAP_EMAIL, 
+        pass: process.env.MAILTRAP_SENHA 
+      }, 
+    }) 
+    
+    async function enviaEmail(dados: any) { 
+      const mensagem = gerarTabelaHTML(dados) 
+      
+      const info = await transporter.sendMail({ 
+        from: 'RPG System <rpg@gmail.com>', 
+        to: "teste@gmail.com", 
+        subject: "Relatório do Personagem", 
+        text: "Relatório completo do personagem", 
+        html: mensagem 
+      }) 
+      
+      console.log("Message sent:", info.messageId) 
+    } 
+    
+    router.get("/email/:id", async (req, res) => { 
+      const { id } = req.params 
+      try { 
+        const personagem = await prisma.personagem.findFirst({ 
+          where: { 
+            Id_personagem: Number(id) 
+          }, 
+          include: { 
+            CH: { 
+              include: { 
+                Habilidade: true 
+              } 
+            } 
+          } 
+        }) 
+        if (!personagem) { 
+          res.status(404).json({ 
+            erro: "Personagem não encontrado" 
+          }) 
+          return 
+        } 
+        await enviaEmail(personagem) 
+        res.status(200).json(personagem) 
+      } catch (error) { 
+        res.status(500).json({ erro: "Erro interno do servidor" }) 
+      } 
+    })
 
 export default router
