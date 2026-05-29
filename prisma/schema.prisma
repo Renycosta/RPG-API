@@ -7,52 +7,65 @@ datasource db {
   provider = "mysql"
 }
 
-model Aluno {
-  id           Int         @id @default(autoincrement())
-  nome         String      @db.VarChar(40) 
-  turma        String      @db.VarChar(3) 
-  responsavel  String      @db.VarChar(40) 
-  email        String      @db.VarChar(60) 
-  obs          String?     @db.Text
-  saldo        Decimal     @db.Decimal(9,2) @default(0)
-  depositos    Deposito[]
-  vendas       Venda[]
-  @@map("alunos")
+model Personagem{
+  Id_personagem   Int     @id @default(autoincrement())
+  Nome_personagem String  @db.VarChar(40)
+  Classe          Classes
+  Nivel           Int     @db.SmallInt
+  Pontos          Int     @db.SmallInt
+  CH              Comprar_habilidade[]
+  PH              Personagem_habilidade[]
+  @@map("personagens")
 }
 
-model Produto {
-  id           Int        @id @default(autoincrement())
-  nome         String     @db.VarChar(60) 
-  quant        Int        @db.SmallInt
-  preco        Decimal    @db.Decimal(9,2)
-  vendas       Venda[]
-  @@map("produtos")
+model Habilidade{
+  Id_habilidade       Int     @id @default(autoincrement())
+  Nome_habilidade     String  @db.VarChar(40)
+  Descricao           String  @db.VarChar(120)
+  Tipo                Tipos
+  Nivel_necessario    Int     @db.SmallInt
+  Pontos_necessarios  Int     @db.SmallInt
+  CH                  Comprar_habilidade[]
+  PH                  Personagem_habilidade[]
+  @@map("habilidades")
 }
 
-model Deposito {
-  id         Int        @id @default(autoincrement())
-  aluno      Aluno      @relation(fields: [alunoId], references: [id])
-  alunoId    Int
-  valor      Decimal    @db.Decimal(9,2)
-  tipo       Tipos
-  data       DateTime   @default(now())
-  @@map("depositos")
+model Comprar_habilidade{
+  Personagem       Personagem  @relation(fields: [Personagem_Id], references: [Id_personagem])
+  Personagem_Id    Int         
+  Habilidade       Habilidade  @relation(fields: [Habilidade_Id], references: [Id_habilidade])
+  Habilidade_Id    Int         
+  Data             DateTime    @default(now())
+  Pontos_gastos    Int         @db.SmallInt
+  Analise_nivel    Int         @db.SmallInt
+  @@id([Personagem_Id, Habilidade_Id])
+  @@map("comprar_habilidades")
 }
 
-model Venda {
-  id         Int       @id @default(autoincrement())
-  aluno      Aluno     @relation(fields: [alunoId], references: [id])
-  alunoId    Int
-  produto    Produto   @relation(fields: [produtoId], references: [id])
-  produtoId  Int
-  quant      Int       @db.SmallInt
-  preco      Decimal   @db.Decimal(9,2)
-  data       DateTime  @default(now())
-  @@map("vendas")
+model Personagem_habilidade{
+  Id               Int         @id @default(autoincrement())
+  Personagem       Personagem  @relation(fields: [Personagem_Id], references: [Id_personagem])
+  Personagem_Id    Int        
+  Habilidade       Habilidade  @relation(fields: [Habilidade_Id], references: [Id_habilidade])
+  Habilidade_Id    Int 
+  Data             DateTime    @default(now())
+  @@map("personagem_habilidades")
+}
+
+enum Classes {
+  Guerreiro 
+  Mago 
+  ladrão
+  Clérigo 
+  Monge
+  Druida
+  Necromante
 }
 
 enum Tipos {
-  PIX
-  Dinheiro
-  Cartao
+  Ativa
+  Passiva
+  Magia
+  Tecnica
+  Ultimato
 }
